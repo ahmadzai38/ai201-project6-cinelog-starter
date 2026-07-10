@@ -4,6 +4,11 @@
 instance/
 __pycache__/
 *.pyc
+<<<<<<< HEAD
 .pytest_cache/
 .venv/
 venv/
+=======
+.venv/
+venv/
+>>>>>>> 834b885 (fix: prevent local files from being tracked)
