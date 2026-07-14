@@ -1,12 +1,13 @@
 """
-models.py — CineLog (feature/watchlist branch state)
+models.py — CineLog
 
-This is models.py as it existed when the watchlist PR was opened —
-before the main branch refactor that migrated film IDs from integer to UUID.
+SQLAlchemy models. Film IDs use UUIDs throughout.
+(This is the post-refactor state on main — integer IDs were migrated to UUIDs.)
 """
 
 import uuid
 from datetime import datetime, timezone
+
 from app import db
 
 
@@ -18,16 +19,31 @@ class User(db.Model):
     id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
     username = db.Column(db.String(64), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+    )
 
-    collection_entries = db.relationship("CollectionEntry", backref="user", lazy=True)
+    collection_entries = db.relationship(
+        "CollectionEntry",
+        backref="user",
+        lazy=True,
+    )
 
     def to_dict(self):
-        return {"id": self.id, "username": self.username, "email": self.email}
+        return {
+            "id": self.id,
+            "username": self.username,
+            "email": self.email,
+        }
 
 
 class Film(db.Model):
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    id = db.Column(
+        db.String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
     title = db.Column(db.String(200), nullable=False)
     year = db.Column(db.Integer, nullable=True)
     director = db.Column(db.String(200), nullable=True)
@@ -35,7 +51,6 @@ class Film(db.Model):
     poster_url = db.Column(db.String(500), nullable=True)
     average_rating = db.Column(db.Float, default=0.0)
 
-    
     collection_entries = db.relationship(
         "CollectionEntry",
         backref="film",
@@ -62,14 +77,34 @@ class Film(db.Model):
 
 class CollectionEntry(db.Model):
     """Represents a film a user has already watched and logged."""
-    id = db.Column(db.String(36), primary_key=True, default=generate_uuid)
-    user_id = db.Column(db.String(36), db.ForeignKey("user.id"), nullable=False)
-    film_id = db.Column(db.Integer, db.ForeignKey("film.id"), nullable=False)
-    date_added = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
-    rating = db.Column(db.Integer, nullable=True)  # 1–5, optional
+
+    id = db.Column(
+        db.String(36),
+        primary_key=True,
+        default=generate_uuid,
+    )
+    user_id = db.Column(
+        db.String(36),
+        db.ForeignKey("user.id"),
+        nullable=False,
+    )
+    film_id = db.Column(
+        db.String(36),
+        db.ForeignKey("film.id"),
+        nullable=False,
+    )
+    date_added = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc),
+    )
+    rating = db.Column(db.Integer, nullable=True)
 
     __table_args__ = (
-        db.UniqueConstraint("user_id", "film_id", name="unique_user_film_collection"),
+        db.UniqueConstraint(
+            "user_id",
+            "film_id",
+            name="unique_user_film_collection",
+        ),
     )
 
     def to_dict(self):
@@ -83,7 +118,7 @@ class CollectionEntry(db.Model):
 
 
 class WatchlistEntry(db.Model):
-    """Represents a film a user wants to watch (saved for later)."""
+    """Represents a film a user wants to watch."""
 
     id = db.Column(
         db.String(36),
